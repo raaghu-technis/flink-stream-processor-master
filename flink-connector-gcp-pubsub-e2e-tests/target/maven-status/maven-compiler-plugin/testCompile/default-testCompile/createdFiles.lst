@@ -1,0 +1,4 @@
+com/google/pubsub/flink/DockerImageVersions.class
+com/google/pubsub/flink/PubSubSinkEmulatorTest.class
+com/google/pubsub/flink/PubSubEmulatorHelper.class
+com/google/pubsub/flink/PubSubSourceEmulatorTest.class
