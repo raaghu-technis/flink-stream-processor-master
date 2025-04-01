@@ -1,0 +1,24 @@
+apiVersion: flink.apache.org/v1beta1
+kind: FlinkDeployment
+metadata:
+  name: line-counter-stateful
+  namespace: default
+spec:
+  image: europe-west1-docker.pkg.dev/technis-counting-dev-11983/tsda-flink-spike/flink-1.20.1-with-dep:latest
+  imagePullPolicy: IfNotPresent
+  flinkVersion: v1_20
+  flinkConfiguration:
+    taskmanager.numberOfTaskSlots: "2"
+    state.checkpoints.dir: file:///opt/flink/checkpoints/
+  serviceAccount: flink
+  jobManager:
+    resource:
+      memory: "2048m"
+      cpu: 1
+  taskManager:
+    resource:
+      memory: "2048m"
+      cpu: 1
+  job:
+    jarURI: file:///opt/flink/line-counting-stateful.jar
+    parallelism: 2

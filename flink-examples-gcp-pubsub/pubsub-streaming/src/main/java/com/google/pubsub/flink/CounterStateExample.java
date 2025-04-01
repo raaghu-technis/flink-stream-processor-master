@@ -1,5 +1,6 @@
 package com.google.pubsub.flink;
 
+import com.google.auth.oauth2.GoogleCredentials;
 import com.google.pubsub.v1.PubsubMessage;
 import org.apache.flink.api.common.eventtime.WatermarkStrategy;
 import org.apache.flink.api.common.serialization.DeserializationSchema;
@@ -15,6 +16,7 @@ import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.KeyedProcessFunction;
 import org.apache.flink.util.Collector;
 
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -22,7 +24,7 @@ import java.util.Set;
 
 public class CounterStateExample {
     private static final Set<String> TARGET_DEVICE_IDS = new HashSet<>(Arrays.asList("DAHUA_DUAL-LENS_8D05925PAG255BC"));
-    private static final boolean DEBUG_MODE = false; // Set to true for verbose output, false for matches only
+    private static final boolean DEBUG_MODE = true; // Set to true for verbose output, false for matches only
 
     // Data model classes
     public static class CounterState {
@@ -130,6 +132,15 @@ public class CounterStateExample {
         String projectName = "technis-counting-dev-11983";
         String subscriptionName = "tsda-beam-spike";
 
+        // Setup Google Credentials
+
+        System.out.println("**********Loading Creds File: *************");
+
+        GoogleCredentials creds = GoogleCredentials
+                .fromStream(new FileInputStream("/opt/flink/application_default_credentials.json"));
+
+        System.out.println("**********Loaded Creds File: *************" + creds.toString());
+
         debugPrint("Starting PubSub consumer with project: " + projectName + ", subscription: " + subscriptionName);
         debugPrint("Target device ID: '" + TARGET_DEVICE_IDS.iterator().next() + "' (length: " + TARGET_DEVICE_IDS.iterator().next().length() + ")");
 
@@ -171,6 +182,7 @@ public class CounterStateExample {
                         })
                         .setProjectName(projectName)
                         .setSubscriptionName(subscriptionName)
+                        .setCredentials(creds)
                         .build(),
                 WatermarkStrategy.noWatermarks(),
                 "PubSubSource"
