@@ -28,6 +28,11 @@
       <artifactId>flink-connector-gcp-pubsub</artifactId>
       <version>${project.version}</version>
     </dependency>
+    <dependency>
+      <groupId>ch.qos.logback</groupId>
+      <artifactId>logback-classic</artifactId>
+      <version>1.2.11</version> <!-- or a version appropriate for your project -->
+    </dependency>
   </dependencies>
 
   <build>
