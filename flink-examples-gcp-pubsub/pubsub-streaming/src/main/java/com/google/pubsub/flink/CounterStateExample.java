@@ -133,6 +133,7 @@ public class CounterStateExample {
     }
 
     public static void main(String[] args) throws Exception {
+
         final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
         String projectName = "technis-counting-dev-11983";
         String subscriptionName = "tsda-beam-spike";
@@ -140,10 +141,10 @@ public class CounterStateExample {
         // Setup Google Credentials
         LOG.info("Loading credentials file...");
 
-        // GoogleCredentials creds = GoogleCredentials
-        //        .fromStream(new FileInputStream("/opt/flink/application_default_credentials.json"));
+        GoogleCredentials creds = GoogleCredentials
+              .fromStream(new FileInputStream("/opt/flink/application_default_credentials.json"));
 
-        // LOG.info("Successfully loaded credentials: {}", creds);
+        LOG.info("Successfully loaded credentials: {}", creds);
 
         LOG.info("Starting PubSub consumer with project: {}, subscription: {}", projectName, subscriptionName);
         LOG.debug("Target device ID: '{}' (length: {})",
@@ -188,7 +189,7 @@ public class CounterStateExample {
                         })
                         .setProjectName(projectName)
                         .setSubscriptionName(subscriptionName)
-                        //.setCredentials(creds)
+                        .setCredentials(creds)
                         .build(),
                 WatermarkStrategy.noWatermarks(),
                 "PubSubSource"
