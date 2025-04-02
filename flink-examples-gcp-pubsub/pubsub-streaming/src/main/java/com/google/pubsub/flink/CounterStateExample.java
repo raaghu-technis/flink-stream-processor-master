@@ -15,6 +15,8 @@ import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.KeyedProcessFunction;
 import org.apache.flink.util.Collector;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -23,6 +25,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 public class CounterStateExample {
+    private static final Logger LOG = LoggerFactory.getLogger(CounterStateExample.class);
     private static final Set<String> TARGET_DEVICE_IDS = new HashSet<>(Arrays.asList("DAHUA_DUAL-LENS_8D05925PAG255BC"));
     private static final boolean DEBUG_MODE = true; // Set to true for verbose output, false for matches only
 
@@ -59,6 +62,7 @@ public class CounterStateExample {
 
     // Stateful processing function
     public static class ComputeDeltaFunction extends KeyedProcessFunction<String, JsonNode, OutputRecord> {
+        private static final Logger LOG = LoggerFactory.getLogger(ComputeDeltaFunction.class);
         private ValueState<CounterState> counterState;
         private final ObjectMapper mapper = new ObjectMapper();
 
@@ -88,7 +92,7 @@ public class CounterStateExample {
                 int deltaExited = currentExited - state.prevExited;
 
                 if (DEBUG_MODE) {
-                    System.out.printf("device: %s, delta_entered: %d, delta_exited: %d%n",
+                    LOG.debug("Device: {}, delta_entered: {}, delta_exited: {}",
                             deviceId, deltaEntered, deltaExited);
                 }
 
@@ -108,22 +112,23 @@ public class CounterStateExample {
 
     private static void debugPrint(String message) {
         if (DEBUG_MODE) {
-            System.out.println(message);
+            LOG.debug(message);
         }
     }
 
     private static String getDeviceIdFromPath(String path) {
         if (path == null || path.isEmpty()) {
-            debugPrint("Path is null or empty");
+            LOG.warn("Path is null or empty");
             return "unknown";
         }
         String[] parts = path.split("/");
         if (parts.length < 3) {
-            debugPrint("Invalid path format: " + path);
+            LOG.warn("Invalid path format: {}", path);
             return "unknown";
         }
         String deviceId = parts[2].trim();
-        debugPrint("Extracted device ID: '" + deviceId + "' (length: " + deviceId.length() + ") from path: '" + path + "'");
+        LOG.debug("Extracted device ID: '{}' (length: {}) from path: '{}'",
+                deviceId, deviceId.length(), path);
         return deviceId;
     }
 
@@ -133,16 +138,17 @@ public class CounterStateExample {
         String subscriptionName = "tsda-beam-spike";
 
         // Setup Google Credentials
+        LOG.info("Loading credentials file...");
 
-        System.out.println("**********Loading Creds File: *************");
+        // GoogleCredentials creds = GoogleCredentials
+        //        .fromStream(new FileInputStream("/opt/flink/application_default_credentials.json"));
 
-        GoogleCredentials creds = GoogleCredentials
-                .fromStream(new FileInputStream("/opt/flink/application_default_credentials.json"));
+        // LOG.info("Successfully loaded credentials: {}", creds);
 
-        System.out.println("**********Loaded Creds File: *************" + creds.toString());
-
-        debugPrint("Starting PubSub consumer with project: " + projectName + ", subscription: " + subscriptionName);
-        debugPrint("Target device ID: '" + TARGET_DEVICE_IDS.iterator().next() + "' (length: " + TARGET_DEVICE_IDS.iterator().next().length() + ")");
+        LOG.info("Starting PubSub consumer with project: {}, subscription: {}", projectName, subscriptionName);
+        LOG.debug("Target device ID: '{}' (length: {})",
+                TARGET_DEVICE_IDS.iterator().next(),
+                TARGET_DEVICE_IDS.iterator().next().length());
 
         DataStream<JsonNode> source = env.fromSource(
                 PubSubSource.<JsonNode>builder()
@@ -165,7 +171,7 @@ public class CounterStateExample {
                                     node.put("publishTime", message.getPublishTime().getSeconds());
                                     return node;
                                 } catch (Exception e) {
-                                    debugPrint("Error parsing data: " + e.getMessage());
+                                    LOG.error("Error parsing data: {}", e.getMessage(), e);
                                     return null;
                                 }
                             }
@@ -182,7 +188,7 @@ public class CounterStateExample {
                         })
                         .setProjectName(projectName)
                         .setSubscriptionName(subscriptionName)
-                        .setCredentials(creds)
+                        //.setCredentials(creds)
                         .build(),
                 WatermarkStrategy.noWatermarks(),
                 "PubSubSource"
@@ -197,6 +203,6 @@ public class CounterStateExample {
         // Print the results
         processedStream.print();
 
-        env.execute("PubSub Counter Delta Processor");
+        env.execute("line counter stateful - test SLF4J IMPL");
     }
 }
