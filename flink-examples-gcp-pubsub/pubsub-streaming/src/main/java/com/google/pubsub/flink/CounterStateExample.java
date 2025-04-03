@@ -92,7 +92,7 @@ public class CounterStateExample {
                 int deltaExited = currentExited - state.prevExited;
 
                 if (DEBUG_MODE) {
-                    LOG.debug("Device: {}, delta_entered: {}, delta_exited: {}",
+                    LOG.info("Device: {}, delta_entered: {}, delta_exited: {}",
                             deviceId, deltaEntered, deltaExited);
                 }
 
@@ -112,7 +112,7 @@ public class CounterStateExample {
 
     private static void debugPrint(String message) {
         if (DEBUG_MODE) {
-            LOG.debug(message);
+            LOG.info(message);
         }
     }
 
@@ -127,7 +127,7 @@ public class CounterStateExample {
             return "unknown";
         }
         String deviceId = parts[2].trim();
-        LOG.debug("Extracted device ID: '{}' (length: {}) from path: '{}'",
+        LOG.info("Extracted device ID: '{}' (length: {}) from path: '{}'",
                 deviceId, deviceId.length(), path);
         return deviceId;
     }
@@ -141,13 +141,13 @@ public class CounterStateExample {
         // Setup Google Credentials
         LOG.info("Loading credentials file...");
 
-        GoogleCredentials creds = GoogleCredentials
-              .fromStream(new FileInputStream("/opt/flink/application_default_credentials.json"));
+        //GoogleCredentials creds = GoogleCredentials
+        //      .fromStream(new FileInputStream("/opt/flink/application_default_credentials.json"));
 
-        LOG.info("Successfully loaded credentials: {}", creds);
+        //LOG.info("Successfully loaded credentials: {}", creds);
 
         LOG.info("Starting PubSub consumer with project: {}, subscription: {}", projectName, subscriptionName);
-        LOG.debug("Target device ID: '{}' (length: {})",
+        LOG.info("Target device ID: '{}' (length: {})",
                 TARGET_DEVICE_IDS.iterator().next(),
                 TARGET_DEVICE_IDS.iterator().next().length());
 
@@ -189,7 +189,7 @@ public class CounterStateExample {
                         })
                         .setProjectName(projectName)
                         .setSubscriptionName(subscriptionName)
-                        .setCredentials(creds)
+                //        .setCredentials(creds)
                         .build(),
                 WatermarkStrategy.noWatermarks(),
                 "PubSubSource"
@@ -204,6 +204,6 @@ public class CounterStateExample {
         // Print the results
         processedStream.print();
 
-        env.execute("line counter stateful - test SLF4J IMPL");
+        env.execute("line-counter-stateful");
     }
 }

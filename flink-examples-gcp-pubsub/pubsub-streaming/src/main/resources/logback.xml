@@ -24,7 +24,7 @@
         </encoder>
     </appender>
     <!-- Application Loggers -->
-    <logger name="com.google.pubsub.flink" level="DEBUG" additivity="false">
+    <logger name="com.google.pubsub.flink" level="INFO" additivity="false">
         <appender-ref ref="CONSOLE"/>
         <appender-ref ref="FILE"/>
     </logger>

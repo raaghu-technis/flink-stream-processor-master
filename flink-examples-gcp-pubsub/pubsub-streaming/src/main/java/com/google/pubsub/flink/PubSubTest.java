@@ -1,5 +1,9 @@
 package com.google.pubsub.flink;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.google.auth.oauth2.GoogleCredentials;
 import com.google.pubsub.v1.PubsubMessage;
 import org.apache.flink.api.common.eventtime.WatermarkStrategy;
 import org.apache.flink.api.common.serialization.DeserializationSchema;
@@ -10,33 +14,28 @@ import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.node.Obje
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
 public class PubSubTest {
+    private static final Logger LOG = LoggerFactory.getLogger(PubSubTest.class);
     private static final Set<String> TARGET_DEVICE_IDS = new HashSet<>(Arrays.asList("DAHUA_DUAL-LENS_8D05925PAG255BC"));
-    private static final boolean DEBUG_MODE = false; // Set to true for verbose output, false for matches only
-
-    private static void debugPrint(String message) {
-        if (DEBUG_MODE) {
-            System.out.println(message);
-        }
-    }
 
     private static String getDeviceIdFromPath(String path) {
         if (path == null || path.isEmpty()) {
-            debugPrint("Path is null or empty");
+            LOG.debug("Path is null or empty");
             return "unknown";
         }
         String[] parts = path.split("/");
         if (parts.length < 3) {
-            debugPrint("Invalid path format: " + path);
+            LOG.debug("Invalid path format: " + path);
             return "unknown";
         }
         String deviceId = parts[2].trim();
-        debugPrint("Extracted device ID: '" + deviceId + "' (length: " + deviceId.length() + ") from path: '" + path + "'");
+        LOG.info("Extracted device ID: '" + deviceId + "' (length: " + deviceId.length() + ") from path: '" + path + "'");
         return deviceId;
     }
 
@@ -45,8 +44,14 @@ public class PubSubTest {
         String projectName = "technis-counting-dev-11983";
         String subscriptionName = "tsda-beam-spike";
 
-        debugPrint("Starting PubSub consumer with project: " + projectName + ", subscription: " + subscriptionName);
-        debugPrint("Target device ID: '" + TARGET_DEVICE_IDS.iterator().next() + "' (length: " + TARGET_DEVICE_IDS.iterator().next().length() + ")");
+
+
+        // authenticate to google cloud
+        //GoogleCredentials creds = GoogleCredentials
+        //        .fromStream(new FileInputStream("/opt/flink/application_default_credentials.json"));
+
+        LOG.info("Starting PubSub consumer with project: " + projectName + ", subscription: " + subscriptionName);
+        LOG.info("Target device ID: '" + TARGET_DEVICE_IDS.iterator().next() + "' (length: " + TARGET_DEVICE_IDS.iterator().next().length() + ")");
 
         DataStream<String> source = env.fromSource(
                 PubSubSource.<String>builder()
@@ -55,38 +60,34 @@ public class PubSubTest {
 
                             @Override
                             public String deserialize(PubsubMessage message) throws IOException {
-                                debugPrint("\n=== New Message Received ===");
-                                debugPrint("Message ID: " + message.getMessageId());
+                                LOG.info("\n=== New Message Received ===");
+                                LOG.info("Message ID: " + message.getMessageId());
 
                                 String path = message.getAttributesMap().getOrDefault("path", "").trim();
-                                debugPrint("Path attribute: '" + path + "'");
+                                LOG.info("Path attribute: '" + path + "'");
 
                                 String deviceId = getDeviceIdFromPath(path);
-                                debugPrint("Comparing device IDs:");
-                                debugPrint("  Expected: '" + TARGET_DEVICE_IDS.iterator().next() + "'");
-                                debugPrint("  Actual:   '" + deviceId + "'");
-                                debugPrint("  Match:     " + TARGET_DEVICE_IDS.contains(deviceId));
+                                LOG.info("Comparing device IDs:");
+                                LOG.info("  Expected: '" + TARGET_DEVICE_IDS.iterator().next() + "'");
+                                LOG.info("  Actual:   '" + deviceId + "'");
+                                LOG.info("  Match:     " + TARGET_DEVICE_IDS.contains(deviceId));
 
                                 if (!TARGET_DEVICE_IDS.contains(deviceId)) {
-                                    debugPrint("Skipping message - not from target device");
-                                    if (DEBUG_MODE) {
-                                        debugPrint("Character codes in deviceId: " + getCharCodes(deviceId));
-                                        debugPrint("Character codes in target: " + getCharCodes(TARGET_DEVICE_IDS.iterator().next()));
-                                    }
+                                    LOG.info("Skipping message - not from target device");
                                     return null;
                                 }
 
                                 // Only print this for matches, regardless of debug mode
-                                System.out.println("\n=== Matched Message ===");
-                                System.out.println("Device ID: " + deviceId);
+                                LOG.info("\n=== Matched Message ===");
+                                LOG.info("Device ID: " + deviceId);
 
                                 ObjectNode node = mapper.createObjectNode();
                                 try {
                                     String data = message.getData().toStringUtf8();
-                                    debugPrint("Message data: " + data);
+                                    LOG.info("Message data: " + data);
                                     node.set("data", mapper.readTree(data));
                                 } catch (Exception e) {
-                                    debugPrint("Error parsing data: " + e.getMessage());
+                                    LOG.info("Error parsing data: " + e.getMessage());
                                     node.put("data", message.getData().toStringUtf8());
                                 }
 
@@ -95,8 +96,8 @@ public class PubSubTest {
 
                                 String result = mapper.writeValueAsString(node);
                                 // Print the result for matches, regardless of debug mode
-                                System.out.println("Message: " + result);
-                                System.out.println("=== End Matched Message ===\n");
+                                LOG.info("Message: " + result);
+                                LOG.info("=== End Matched Message ===\n");
                                 return result;
                             }
 
@@ -110,7 +111,7 @@ public class PubSubTest {
 
                             @Override
                             public void open(DeserializationSchema.InitializationContext context) {
-                                debugPrint("Initializing deserializer");
+                                LOG.info("Initializing deserializer");
                             }
 
                             @Override
@@ -119,6 +120,7 @@ public class PubSubTest {
                             }
                         })
                         .setProjectName(projectName)
+                        //.setCredentials(creds)
                         .setSubscriptionName(subscriptionName)
                         .build(),
                 WatermarkStrategy.noWatermarks(),
@@ -127,13 +129,13 @@ public class PubSubTest {
 
         DataStream<String> filteredSource = source.filter(message -> {
             if (message == null) {
-                debugPrint("Filtered out null message");
+                LOG.info("Filtered out null message");
                 return false;
             }
             return true;
         });
 
-        debugPrint("Starting to process messages...");
+        LOG.info("Starting to process messages...");
         filteredSource.print();
         env.execute("PubSub Message Parser");
     }
