@@ -3,7 +3,6 @@ package com.google.pubsub.flink;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.auth.oauth2.GoogleCredentials;
 import com.google.pubsub.v1.PubsubMessage;
 import org.apache.flink.api.common.eventtime.WatermarkStrategy;
 import org.apache.flink.api.common.serialization.DeserializationSchema;
@@ -14,14 +13,13 @@ import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.node.Obje
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
-public class PubSubTest {
-    private static final Logger LOG = LoggerFactory.getLogger(PubSubTest.class);
+public class PubSubMessageParser {
+    private static final Logger LOG = LoggerFactory.getLogger(PubSubMessageParser.class);
     private static final Set<String> TARGET_DEVICE_IDS = new HashSet<>(Arrays.asList("DAHUA_DUAL-LENS_8D05925PAG255BC"));
 
     private static String getDeviceIdFromPath(String path) {
