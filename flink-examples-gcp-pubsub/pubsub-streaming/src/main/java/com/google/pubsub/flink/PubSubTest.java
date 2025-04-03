@@ -42,8 +42,8 @@ public class PubSubTest {
     public static void main(String[] args) throws Exception {
         final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
         String projectName = "technis-counting-dev-11983";
-        String subscriptionName = "tsda-beam-spike";
-
+        //String subscriptionName = "tsda-beam-spike";
+        String subscriptionName = "flink-spike-delete-me";
 
 
         // authenticate to google cloud
