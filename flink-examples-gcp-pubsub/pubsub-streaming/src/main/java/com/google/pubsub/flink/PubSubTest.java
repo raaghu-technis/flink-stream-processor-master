@@ -45,10 +45,11 @@ public class PubSubTest {
         //String subscriptionName = "tsda-beam-spike";
         String subscriptionName = "flink-spike-delete-me";
 
-
-        // authenticate to google cloud
-        //GoogleCredentials creds = GoogleCredentials
-        //        .fromStream(new FileInputStream("/opt/flink/application_default_credentials.json"));
+        // For running locally, Comment the below code
+        // Creds will be passed using environment variable during local run
+        /*GoogleCredentials creds = GoogleCredentials
+                .fromStream(new FileInputStream("/opt/flink/application_default_credentials.json"));
+        LOG.info("Successfully loaded credentials: {}", creds);*/
 
         LOG.info("Starting PubSub consumer with project: " + projectName + ", subscription: " + subscriptionName);
         LOG.info("Target device ID: '" + TARGET_DEVICE_IDS.iterator().next() + "' (length: " + TARGET_DEVICE_IDS.iterator().next().length() + ")");
@@ -120,7 +121,7 @@ public class PubSubTest {
                             }
                         })
                         .setProjectName(projectName)
-                        //.setCredentials(creds)
+                        //.setCredentials(creds)  // Comment this line for local mode
                         .setSubscriptionName(subscriptionName)
                         .build(),
                 WatermarkStrategy.noWatermarks(),

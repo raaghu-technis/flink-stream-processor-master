@@ -27,7 +27,6 @@ import java.util.Set;
 public class CounterStateExample {
     private static final Logger LOG = LoggerFactory.getLogger(CounterStateExample.class);
     private static final Set<String> TARGET_DEVICE_IDS = new HashSet<>(Arrays.asList("DAHUA_DUAL-LENS_8D05925PAG255BC"));
-    private static final boolean DEBUG_MODE = true; // Set to true for verbose output, false for matches only
 
     // Data model classes
     public static class CounterState {
@@ -91,10 +90,10 @@ public class CounterStateExample {
                 int deltaEntered = currentEntered - state.prevEntered;
                 int deltaExited = currentExited - state.prevExited;
 
-                if (DEBUG_MODE) {
+                //if (DEBUG_MODE) {
                     LOG.info("Device: {}, delta_entered: {}, delta_exited: {}",
                             deviceId, deltaEntered, deltaExited);
-                }
+                //}
 
                 // Update state
                 state.prevEntered = currentEntered;
@@ -107,12 +106,6 @@ public class CounterStateExample {
                     out.collect(new OutputRecord(deviceId, timestampMs, deltaEntered, deltaExited));
                 }
             }
-        }
-    }
-
-    private static void debugPrint(String message) {
-        if (DEBUG_MODE) {
-            LOG.info(message);
         }
     }
 
@@ -141,10 +134,11 @@ public class CounterStateExample {
         // Setup Google Credentials
         LOG.info("Loading credentials file...");
 
-        //GoogleCredentials creds = GoogleCredentials
-        //      .fromStream(new FileInputStream("/opt/flink/application_default_credentials.json"));
-
-        //LOG.info("Successfully loaded credentials: {}", creds);
+        // For running locally, Comment the below code
+        // Creds will be passed using environment variable during local run
+        /*GoogleCredentials creds = GoogleCredentials
+              .fromStream(new FileInputStream("/opt/flink/application_default_credentials.json"));
+        LOG.info("Successfully loaded credentials: {}", creds);*/
 
         LOG.info("Starting PubSub consumer with project: {}, subscription: {}", projectName, subscriptionName);
         LOG.info("Target device ID: '{}' (length: {})",
@@ -179,7 +173,7 @@ public class CounterStateExample {
 
                             @Override
                             public void open(DeserializationSchema.InitializationContext context) {
-                                debugPrint("Initializing deserializer");
+                                LOG.info("Initializing deserializer");
                             }
 
                             @Override
@@ -189,13 +183,14 @@ public class CounterStateExample {
                         })
                         .setProjectName(projectName)
                         .setSubscriptionName(subscriptionName)
-                //        .setCredentials(creds)
+                        //.setCredentials(creds) // Comment this line for local mode
                         .build(),
                 WatermarkStrategy.noWatermarks(),
                 "PubSubSource"
         );
 
         // Apply stateful processing
+        source.print();
         DataStream<OutputRecord> processedStream = source
                 .filter(message -> message != null)
                 .keyBy(node -> node.get("device_id").asText())
